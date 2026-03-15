@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plant AI - Disease Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: white;
+            min-height: 100vh;
+            background: #0a3d0a;
+            overflow-x: hidden;
+        }
+
+        .background {
+            position: fixed;
+            inset: 0;
+            background-image: url('https://images.stockcake.com/public/c/e/0/ce027faf-0838-499f-b06d-5791e5ae5754_large/lush-green-leaves-stockcake.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -2;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .logo {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .logo::before {
+            content: "🌿";
+            font-size: 5rem;
+        }
+
+        h1 {
+            font-size: 4.8rem;
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 1.6rem;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+        }
+
+        .subtitle {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 3rem;
+            opacity: 0.95;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 60px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #000;
+            background: #ffcd29;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 205, 41, 0.5);
+        }
+
+        .btn:hover {
+            background: #ffc107;
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 16px 40px rgba(255, 193, 7, 0.6);
+        }
+
+        .how-it-works {
+            padding: 60px 0 100px;
+            text-align: center;
+        }
+
+        .how-it-works h2 {
+            font-size: 3.8rem;
+            margin-bottom: 4rem;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 32px 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .step:hover {
+            transform: translateY(-12px);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .step-icon {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.8rem;
+            margin: 0 auto 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .step-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .step p {
+            font-size: 1.1rem;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+
+        /* Floating AI button */
+        .ai-assistant {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #4caf50, #81c784);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 2.5s infinite;
+            z-index: 10;
+        }
+
+        .ai-assistant:hover {
+            transform: scale(1.15);
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.7);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+        }
+
+        /* Report Section (inline, no overlay) */
+        #report-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.94);
+            color: #333;
+            border-radius: 16px;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .report-title {
+            color: #1b5e20;
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+        }
+
+        .report-content dl {
+            line-height: 1.55;
+            font-size: 1.05rem;
+        }
+
+        .report-content dt {
+            font-weight: 700;
+            color: #1b5e20;
+            margin: 16px 0 4px;
+        }
+
+        .report-content dd {
+            margin-left: 0;
+            color: #444;
+        }
+
+        #report-loading {
+            text-align: center;
+            padding: 40px 0;
+            font-size: 1.3rem;
+            color: #4caf50;
+            display: none;
+        }
+
+        /* Chat Modal */
+        #chat-modal {
+            display: none;
+            position: fixed;
+            bottom: 140px;
+            right: 30px;
+            width: 340px;
+            height: 460px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .chat-header {
+            background: #4caf50;
+            color: white;
+            padding: 12px 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #chat-messages {
+            height: 360px;
+            padding: 16px;
+            overflow-y: auto;
+            font-size: 1rem;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            border-top: 1px solid #ddd;
+            display: flex;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 24px;
+            outline: none;
+        }
+
+        #send-message {
+            margin-left: 8px;
+            padding: 10px 16px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+        }
+
+        /* Message styles */
+        .message {
+            margin-bottom: 14px;
+            padding: 12px 16px;
+            border-radius: 22px;
+            max-width: 78%;
+            font-size: 16px;
+            line-height: 1.45;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .user-message {
+            background-color: #10b981;
+            color: white;
+            align-self: flex-end;
+            margin-right: 12px;
+        }
+
+        .bot-message {
+            background-color: #ffffff;
+            color: #111111;
+            align-self: flex-start;
+            margin-left: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Hidden inputs for camera & file */
+        #camera-input,
+        #file-input {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            h1 {
+                font-size: 3.6rem;
+            }
+
+            .subtitle {
+                font-size: 1.6rem;
+            }
+
+            .logo {
+                font-size: 3.8rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.8rem;
+            }
+
+            .btn {
+                padding: 14px 40px;
+                font-size: 1.4rem;
+            }
+
+            .ai-assistant {
+                width: 70px;
+                height: 70px;
+                font-size: 2.6rem;
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="background"></div>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <div class="hero">
+            <div class="logo">Plant AI</div>
+            <h1>Try our AI Powered<br>Disease Detection</h1>
+            <p class="subtitle">Take a Picture of your plant leaf</p>
+            <a href="/trynow" class="btn">Try Now</a>
+        </div>
+
+        <div class="how-it-works">
+            <h2>How it works?</h2>
+            <div class="steps">
+                <div class="step" id="step-camera">
+                    <div class="step-icon">📷</div>
+                    <div class="step-title">Click a Pic</div>
+                    <p>Take a Picture of your plant leaf</p>
+                </div>
+                <div class="step" id="step-upload">
+                    <div class="step-icon">⬆️</div>
+                    <div class="step-title">Upload on Plant AI</div>
+                    <p>Choose from gallery</p>
+                </div>
+                <div class="step" id="step-report">
+                    <div class="step-icon">📄</div>
+                    <div class="step-title">Get final Report</div>
+                    <p>Plant AI will analyze and display a detailed report</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Section (inline) -->
+        <section id="report-section">
+            <div class="report-title">Plant Disease Report</div>
+            <div id="report-loading">Analyzing your leaf... 🌿🔍</div>
+            <div id="report-content" class="report-content" style="display:none;"></div>
+        </section>
+
+    </div>
+
+    <!-- Floating AI Assistant -->
+    <div class="ai-assistant" id="open-chat" title="Chat with Plant AI Assistant">🤖</div>
+
+    <!-- Hidden inputs -->
+    <input type="file" id="camera-input" accept="image/*" capture="environment">
+    <input type="file" id="file-input" accept="image/*">
+
+    <!-- Chat Modal -->
+    <div id="chat-modal">
+        <div class="chat-header">
+            <span>Plant AI Assistant 🌱</span>
+            <span id="close-chat" style="cursor:pointer; font-size:1.4rem;">×</span>
+        </div>
+        <div id="chat-messages">
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Ask about your plant...">
+            <button id="send-message">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let cameraStreamIndex = null;
+
+        // Camera Functions for Index Page
+        async function openCameraDirectly() {
+            try {
+                const modal = document.getElementById('camera-modal-index');
+                const video = document.getElementById('camera-view-index');
+
+                cameraStreamIndex = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+
+                video.srcObject = cameraStreamIndex;
+                modal.style.display = 'flex';
+            } catch (error) {
+                console.error('Camera error:', error);
+                alert('Unable to access camera. Please check permissions or use Try Now page.');
+            }
+        }
+
+        function capturePhotoIndex() {
+            const video = document.getElementById('camera-view-index');
+            const canvas = document.getElementById('camera-canvas-index');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+
+            canvas.toBlob(blob => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    sessionStorage.setItem('capturedImage', e.target.result);
+                    closeCameraIndex();
+                    window.location.href = '/trynow';
+                };
+                reader.readAsDataURL(blob);
+            }, 'image/jpeg', 0.9);
+        }
+
+        function closeCameraIndex() {
+            const modal = document.getElementById('camera-modal-index');
+            const video = document.getElementById('camera-view-index');
+
+            if (cameraStreamIndex) {
+                cameraStreamIndex.getTracks().forEach(track => track.stop());
+                cameraStreamIndex = null;
+            }
+
+            video.srcObject = null;
+            modal.style.display = 'none';
+        }
+
+        // ─── Chat logic ────────────────────────────────────────
+        const chatModal = document.getElementById('chat-modal');
+        const openChatBtn = document.getElementById('open-chat');
+        const closeChatBtn = document.getElementById('close-chat');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-message');
+        const messagesDiv = document.getElementById('chat-messages');
+
+        openChatBtn.addEventListener('click', () => {
+            chatModal.style.display = 'block';
+            chatInput.focus();
+            if (!messagesDiv.hasChildNodes()) {
+                addMessage('Hi', true);
+                sendMessage('Hi');
+            }
+        });
+        closeChatBtn.addEventListener('click', () => { chatModal.style.display = 'none'; });
+
+        function addMessage(text, isUser = false) {
+            const msg = document.createElement('div');
+            msg.classList.add('message');
+            if (isUser) {
+                msg.classList.add('user-message');
+            } else {
+                msg.classList.add('bot-message');
+            }
+            msg.textContent = text;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendMessage(text = chatInput.value.trim()) {
+            if (!text) return;
+
+            console.log('Sending message:', text);  // Debug log
+            addMessage(text, true);  // Always show user message first
+            chatInput.value = '';
+
+            try {
+                console.log('Making fetch request...');  // Debug log
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                console.log('Response status:', res.status);  // Debug log
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+
+                const data = await res.json();
+                console.log('Response data:', data);  // Debug log
+
+                if (data.reply) {
+                    addMessage(data.reply, false);  // Then add bot reply
+                } else if (data.error) {
+                    addMessage(`Error: ${data.error}`, false);
+                } else {
+                    addMessage("Sorry, I didn't receive a proper response. Please try again.", false);
+                }
+            } catch (err) {
+                console.error('Chat error:', err);  // Debug log
+                addMessage(`Connection error: ${err.message}. Please check your internet connection and try again. 😔`, false);
+            }
+        }
+
+        sendBtn.addEventListener('click', () => sendMessage());
+        chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+
+        // ─── Report Section control ──────────────────────────────────────────
+        const reportSection = document.getElementById('report-section');
+        const reportLoading = document.getElementById('report-loading');
+        const reportContent = document.getElementById('report-content');
+
+        async function analyzeImage(file) {
+            if (!file) return;
+
+            console.log('Starting image analysis for:', file.name);  // Debug log
+
+            reportSection.style.display = 'block';
+            reportLoading.style.display = 'block';
+            reportContent.style.display = 'none';
+            reportContent.innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                console.log('Sending image to server...');  // Debug log
+                const res = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Analysis response status:', res.status);  // Debug log
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+
+                const data = await res.json();
+                console.log('Analysis data:', data);  // Debug log
+
+                if (data.status !== 'success') {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+
+                const r = data.report;
+
+                let html = `
+                    <dl>
+                        <dt>Condition</dt><dd>${r.condition}</dd>
+                        <dt>Disease</dt><dd>${r.disease}</dd>
+                        <dt>Confidence</dt><dd>${r.confidence}</dd>
+                        <dt>Symptoms</dt><dd><pre style="margin:0; font-family:inherit;">${r.symptoms}</pre></dd>
+                        <dt>Possible Causes</dt><dd><pre style="margin:0; font-family:inherit;">${r.causes}</pre></dd>
+                        <dt>Treatment</dt><dd><pre style="margin:0; font-family:inherit;">${r.treatment}</pre></dd>
+                        <dt>Prevention</dt><dd><pre style="margin:0; font-family:inherit;">${r.prevention}</pre></dd>
+                        <dt>Weather Suggestion</dt><dd>${r.weather}</dd>
+                    </dl>
+                `;
+
+                if (r.note) {
+                    html += `<div style="background:#fff3cd;border:1px solid #ffeaa7;border-radius:8px;padding:12px;margin-top:16px;color:#856404;">
+                        <strong>💡 Tip:</strong> ${r.note}
+                    </div>`;
+                }
+
+                reportContent.innerHTML = html;
+                reportLoading.style.display = 'none';
+                reportContent.style.display = 'block';
+                reportSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                console.error('Analysis error:', err);  // Debug log
+                reportContent.innerHTML = `<p style='color:#c62828;text-align:center;padding:40px 0;'>Analysis failed: ${err.message}<br>Please try again or use the chat assistant below.</p>`;
+                reportLoading.style.display = 'none';
+                reportContent.style.display = 'block';
+            }
+        }
+
+        // ─── Step click handlers ───────────────────────────────────────────
+        document.getElementById('step-camera').addEventListener('click', () => {
+            openCameraDirectly();
+        });
+
+        document.getElementById('step-upload').addEventListener('click', () => {
+            window.location.href = '/trynow';
+        });
+
+        document.getElementById('step-report').addEventListener('click', () => {
+            window.location.href = '/trynow#history';
+            setTimeout(() => {
+                if (window.location.hash === '#history') {
+                    // Trigger history modal if on trynow page
+                    const event = new CustomEvent('showHistory');
+                    window.dispatchEvent(event);
+                }
+            }, 500);
+        });
+
+        // Handle camera / file selection
+        document.getElementById('camera-input').addEventListener('change', e => {
+            if (e.target.files && e.target.files[0]) {
+                analyzeImage(e.target.files[0]);
+            }
+        });
+
+        document.getElementById('file-input').addEventListener('change', e => {
+            if (e.target.files && e.target.files[0]) {
+                analyzeImage(e.target.files[0]);
+            }
+        });
+    </script>
+</body>
+
+</html>
